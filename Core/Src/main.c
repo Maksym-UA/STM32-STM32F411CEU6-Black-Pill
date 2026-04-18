@@ -99,7 +99,7 @@ int main(void)
 	    {
 	        // ДІЯ ПРИ НАТИСКАННІ: Починаємо блимати
 	        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	        HAL_Delay(200); // Швидке блимання, щоб ви точно побачили реакцію
+	        HAL_Delay(500);
 	    }
 	    else
 	    {
