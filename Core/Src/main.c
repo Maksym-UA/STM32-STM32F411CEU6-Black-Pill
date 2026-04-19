@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "app.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -87,26 +88,15 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
+  setup();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // Перевіряємо кнопку PA0 (якщо натиснута, вона замикає на GND, тобто RESET)
-	    if (HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin) == GPIO_PIN_RESET)
-	    {
-	        // ДІЯ ПРИ НАТИСКАННІ: Починаємо блимати
-	        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	        HAL_Delay(500);
-	    }
-	    else
-	    {
-	        // ДІЯ ПРИ ВІДПУЩЕННІ: Вимикаємо світлодіод
-	        // На Black Pill PC13: GPIO_PIN_SET = LED OFF
-	        HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-	    }
+	  loop();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
