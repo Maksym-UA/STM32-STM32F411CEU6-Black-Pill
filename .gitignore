@@ -1,0 +1,19 @@
+# Build folders
+Debug/
+Release/
+
+# Toolchain generated files
+*.elf
+*.hex
+*.bin
+*.map
+*.su
+*.o
+*.d
+*.cyclo
+
+# IDE specific files
+.settings/
+.metadata/
+*.launch
+.mxproject
