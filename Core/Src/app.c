@@ -26,6 +26,9 @@ void loop(void) {
     // Toggle mode on button press (falling edge)
     if (prev_button_state == 1 && button_state == 0) {
         blinking = !blinking;
+        if (blinking) {
+            last_blink_tick = HAL_GetTick(); // Reset timer when blinking starts
+        }
         HAL_Delay(100); // debounce (100ms)
     }
     prev_button_state = button_state;
