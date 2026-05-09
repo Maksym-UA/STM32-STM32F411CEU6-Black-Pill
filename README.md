@@ -2,8 +2,9 @@
 
 ## Project description
 
-The LED is set to blink. The button controls the LED blinking at a non-predefined rate. 
-The program is implemented via direct access to registers without using HAL.
+The LED is set to blink. GPIO direct register programming: No HAL or LL drivers.
+Debounced button & edge detection: Only changes rate once per press.
+Software "millisecond" timer: by counting iterations and adding a blocking delay.
 
 ## Hardware
 
@@ -20,6 +21,8 @@ The program is implemented via direct access to registers without using HAL.
 
 ## Configuration
 
+- LED: PC13, GPIO Output
+- Button: PA0, GPIO Input
 
 ## Project structure
 
