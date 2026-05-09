@@ -2,9 +2,8 @@
 
 ## Project description
 
-The led is set to blink.
-The button controls the led blinking at non predefined rate.
-The program is implemented via direct acccess to registers without using HAL.
+The LED is set to blink. The button controls the LED blinking at a non-predefined rate. 
+The program is implemented via direct access to registers without using HAL.
 
 ## Hardware
 

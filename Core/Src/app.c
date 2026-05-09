@@ -1,76 +1,76 @@
-/*
- * app.c
- *
- *  Created on: Apr 19, 2026
- *      Author: maksym
- */
-
+// Core/Src/app.c
 #include "app.h"
-#include <stdbool.h>
+#include "stm32f4xx.h"
 
-// --- Hardware Handles ---
-// This tells the compiler: "huart1 exists in another file (main.c)"
-extern UART_HandleTypeDef huart1;
+// Adjust as needed for your hardware:
+#define LED_PIN         13
+#define BUTTON_PIN      0
 
-// --- Private Variables ---
-static uint8_t rx_byte;          // Buffer for 1 char
-static bool is_blinking = false; // Toggle state
-static uint32_t last_blink = 0;  // Blink timer
-static uint32_t last_btn_press = 0; // Button debounce timer
+const uint32_t blink_rates[] = {1000, 250, 100};
+const uint8_t num_rates = sizeof(blink_rates)/sizeof(blink_rates[0]);
 
-// --- Interrupt Callback ---
-// This function overrides the "Weak" definition in the HAL library.
-// It is called automatically when UART receives data.
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-  if (huart->Instance == USART1)
-  {
-    if (rx_byte == 'T')
-    {
-      is_blinking = !is_blinking;
+static void delay_ms(uint32_t ms) {
+    // Blocking delay, assuming 100MHz (Black Pill default)
+    volatile uint32_t n;
+    while (ms--) {
+        n = 25000; // adjust for your system core clock if needed
+        while (n--) __NOP();
     }
-    // Restart Listening
-    HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
-  }
 }
 
-
 void setup(void) {
-	// 1. Initialize LED (Active Low -> SET = OFF)
-	  // Using standard Black Pill Pin (PC13)
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+    // Enable GPIOC and GPIOA clock
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN | RCC_AHB1ENR_GPIOAEN;
 
-	  // 2. Start UART Interrupt Listening
-	  HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
+    // Configure PC13 as output (LED)
+    GPIOC->MODER &= ~(3 << (LED_PIN * 2));
+    GPIOC->MODER |=  (1 << (LED_PIN * 2));   // Output mode
+
+    GPIOC->OTYPER &= ~(1 << LED_PIN);        // Push-pull
+    GPIOC->OSPEEDR |= (3 << (LED_PIN * 2));  // High speed (optional)
+    GPIOC->PUPDR  &= ~(3 << (LED_PIN * 2));  // No pull
+
+    // Set initial LED state to OFF (Black Pill: 1 = off, 0 = on)
+    GPIOC->ODR |= (1 << LED_PIN);
+
+    // Configure PA0 as input with Pull-Up (button)
+    GPIOA->MODER &= ~(3 << (BUTTON_PIN * 2));               // Input
+    GPIOA->PUPDR &= ~(3 << (BUTTON_PIN * 2));               // Clear
+    GPIOA->PUPDR |=  (1 << (BUTTON_PIN * 2));               // Pull-up
 }
 
 void loop(void) {
-	// 1. Handle Button Press (Send 'T')
-	  // Black Pill PA0 is Active Low (GND when pressed)
-	  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_RESET)
-	  {
-	    // Debounce: Ensure 250ms passed since last press
-	    if (HAL_GetTick() - last_btn_press > 250)
-	    {
-	      uint8_t cmd = 'T';
-	      HAL_UART_Transmit(&huart1, &cmd, 1, 10);
-	      last_btn_press = HAL_GetTick(); // Reset timer
-	    }
-	  }
+    static int prev_btn = 1;
+    static uint8_t rate_idx = 0;
+    static uint32_t last_toggle = 0;
+    static int led_is_on = 0;
 
-	  // 2. Handle Blinking
-	  if (is_blinking)
-	  {
-	    if (HAL_GetTick() - last_blink > 500) // 500ms interval
-	    {
-	      HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	      last_blink = HAL_GetTick();
-	    }
-	  }
-	  else
-	  {
-	    // Ensure LED stays off when disabled
-	    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-	  }
+    // Button state (pressed=0 because pull-up)
+    int btn = (GPIOA->IDR & (1 << BUTTON_PIN)) ? 1 : 0;
 
+    if (prev_btn && !btn) {
+        // Button pressed (falling edge)
+        rate_idx = (rate_idx + 1) % num_rates;
+        delay_ms(100); // debounce
+    }
+    prev_btn = btn;
+
+    // Get a timestamp (use SysTick or HAL_GetTick for real precision, here is just delay for demo)
+    static uint32_t now_tick = 0;
+    uint32_t interval = blink_rates[rate_idx];
+
+    if (++now_tick >= interval) {
+        now_tick = 0;
+
+        // Toggle LED: PC13 (active low)
+        if (led_is_on) {
+            GPIOC->ODR |= (1 << LED_PIN);  // OFF
+            led_is_on = 0;
+        } else {
+            GPIOC->ODR &= ~(1 << LED_PIN); // ON
+            led_is_on = 1;
+        }
+    }
+
+    delay_ms(1); // ensures a "tick" per ms
 }
